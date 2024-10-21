@@ -1,7 +1,7 @@
 .chartContainer {
   background: linear-gradient(135deg, rgba(245, 247, 250, 0.06) 0%, rgba(245, 247, 250, 0.0001) 100%);
   backdrop-filter: blur(108.73126983642578px);
-  box-shadow: 0px 4px 4px 0px #090D141F;
+  box-shadow: -2px -2px 4px 0px #E0E0FF05;
   border: 1px solid #F5F7FA0F;
   padding: 24px;
   border-radius: 24px;
@@ -63,6 +63,25 @@
     }
   }
 
+  .presetButtons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 16px;
+    gap: 8px;
+
+    button {
+      border: 1.5px solid #16F195;
+      background: #23DEA01A;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+    }
+  }
+
   @media (max-width: 768px) {
    width: 96%;
   }
@@ -115,6 +134,7 @@
   outline: none;
   border-radius: 16px;
   padding: 10px;
+  width: 90%;
   height: 50px;
   transition: all .1s ease-in-out;
   color: #fff;
