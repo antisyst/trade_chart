@@ -8,6 +8,7 @@
   width: 756px;
 
   .mainChartSvg {
+    height: 510px;
     @media (max-width: 768px) {
       width: 100%;
     }
@@ -39,7 +40,6 @@
         padding: 8px 10px;
         border-width: 1.5px;
         font-size: 12px;
-        color: #FFFFFF;
         font-weight: 500;
         border-style: solid;
 
