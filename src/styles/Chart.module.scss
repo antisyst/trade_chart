@@ -7,6 +7,12 @@
   border-radius: 24px;
   width: 756px;
 
+  .mainChartSvg {
+    @media (max-width: 768px) {
+      width: 100%;
+    }
+  }
+
   .topContent {
     width: 100%;
     display: flex;
@@ -84,6 +90,7 @@
 
   @media (max-width: 768px) {
    width: 96%;
+   padding: 24px 10px;
   }
 }
 

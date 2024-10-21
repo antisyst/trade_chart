@@ -271,7 +271,7 @@ const BondingCurveChart: React.FC = () => {
           <button className={styles.impactAreaButton}>Impact Area</button>
         </div>
       </div>
-      <svg ref={chartRef}></svg>
+      <svg ref={chartRef} className={styles.mainChartSvg}></svg>
       <div className={styles.inputContainer}>
         <label className={styles.inputLabel}>
           Token Amount:
