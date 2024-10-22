@@ -53,9 +53,32 @@
         padding: 8px 10px;
         border-width: 1.5px;
         font-size: 12px;
-        color: #FFFFFF;
         font-weight: 500;
         border-style: solid;
+
+        
+        &.burnButton {
+          background: transparent;
+          border-color: #16F1954D;
+          transition: all 0.1s ease-out;
+
+          &.active {
+            background: #23DEA01A;
+            border-color: #16F195;
+          }
+        }
+
+        &.mintButton {
+          background: transparent;
+          border-color: #16F1954D;
+          transition: all 0.1s ease-out;
+
+
+          &.active {
+            background: #23DEA01A;
+            border-color: #16F195;
+          }
+        }
 
         &.bondingCurveButton {
           background: #2AABEE1A;
