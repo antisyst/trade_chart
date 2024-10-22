@@ -52,6 +52,10 @@ a {
   text-decoration: none;
 }
 
+text {
+  user-select: none;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
