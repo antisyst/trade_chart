@@ -6,8 +6,9 @@
   gap: 40px;
   width: 100%;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1150px) {
     flex-direction: column;
+    gap: 20px;
   }
 }
 
@@ -22,7 +23,7 @@
 
   .mainChartSvg {
     height: 510px;
-    @media (max-width: 768px) {
+    @media (max-width: 1150px) {
       width: 100%;
     }
   }
@@ -148,7 +149,7 @@
   width: auto;
   border-radius: 24px;
 
-  @media (max-width: 768px) {
+  @media (max-width: 1150px) {
     width: 96%;
   }
 
