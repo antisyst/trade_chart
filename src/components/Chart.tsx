@@ -18,6 +18,7 @@ const BondingCurveChart: React.FC = () => {
   const [newSupply, setNewSupply] = useState(currentSupply);
   const [totalUSDCRequired, setTotalUSDCRequired] = useState<number>(calculateTotalFunds(currentSupply));
   const [tradeUSDCRequired, setTradeUSDCRequired] = useState<number>(0);
+  const [isBurn, setIsBurn] = useState(false);
 
   const height = 500;
 
@@ -34,6 +35,7 @@ const BondingCurveChart: React.FC = () => {
     setNewSupply(500);
     setTotalUSDCRequired(calculateTotalFunds(500));
     setTradeUSDCRequired(0);
+    setIsBurn(false);
   };
 
   useEffect(() => {
@@ -114,6 +116,7 @@ const BondingCurveChart: React.FC = () => {
       .style('font-family', 'Montserrat, serif')
       .style('font-size', chartWidth < 500 ? '10px' : '13px')
       .attr('dy', '0.8em')
+      .style('pointer-events', 'none')
       .text('Supply');
 
     svg.append('text')
@@ -122,6 +125,7 @@ const BondingCurveChart: React.FC = () => {
       .style('fill', '#FFFFFF99')
       .style('font-family', 'Montserrat, serif')
       .style('font-size', chartWidth < 600 ? '10px' : '13px')
+      .style('pointer-events', 'none')
       .text('Price (USDC)');
 
     const priceData = Array.from({ length: maxSupply + 1 }, (_, i) => i);
@@ -167,10 +171,16 @@ const BondingCurveChart: React.FC = () => {
       const clickedSupply = Math.round(xScale.invert(mouseX));
 
       const delta = clickedSupply - currentSupply;
-      setNewSupply(clickedSupply);
+      setNewSupply(Math.max(clickedSupply, 0));
       setMintAmount(delta);
-      setTotalUSDCRequired(calculateTotalFunds(clickedSupply));
+      setTotalUSDCRequired(calculateTotalFunds(Math.max(clickedSupply, 0)));
       setTradeUSDCRequired(calculateTradeFunds(currentSupply, delta));
+
+      if (delta < 0) {
+        setIsBurn(true);
+      } else {
+        setIsBurn(false);
+      }
     });
 
     return () => {
@@ -180,20 +190,22 @@ const BondingCurveChart: React.FC = () => {
   }, [currentSupply, newSupply, chartWidth]);
 
   const handleSupplyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const supply = parseFloat(event.target.value) || 0;
+    const supply = Math.max(parseFloat(event.target.value) || 0, 0); 
     const delta = supply - currentSupply;
     setCurrentSupply(supply);
-    setNewSupply(supply + mintAmount);
+    setNewSupply(Math.max(supply + mintAmount, 0)); 
     setTotalUSDCRequired(calculateTotalFunds(supply + mintAmount));
     setTradeUSDCRequired(calculateTradeFunds(supply, delta));
+    setIsBurn(delta < 0);
   };
 
   const handleMintAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const amount = parseFloat(event.target.value) || 0;
     setMintAmount(amount);
-    setNewSupply(currentSupply + amount);
-    setTotalUSDCRequired(calculateTotalFunds(currentSupply + amount));
+    setNewSupply(Math.max(currentSupply + amount, 0));
+    setTotalUSDCRequired(calculateTotalFunds(Math.max(currentSupply + amount, 0)));
     setTradeUSDCRequired(calculateTradeFunds(currentSupply, amount));
+    setIsBurn(amount < 0);
   };
 
   return (
@@ -202,7 +214,8 @@ const BondingCurveChart: React.FC = () => {
         <div className={styles.topContent}>
           <h2 className={styles.chartTitle}>Bonding Curve</h2>
           <div className={styles.buttonContainer}>
-            <button className={styles.bondingCurveButton}>Bonding Curve</button>
+            <button className={`${styles.mintButton} ${!isBurn && styles.active}`}>Mint</button>
+            <button className={`${styles.burnButton} ${isBurn && styles.active}`}>Burn</button>
             <button className={styles.currentSupplyButton}>Current Supply</button>
             <button className={styles.newSupplyButton}>New Supply</button>
             <button className={styles.impactAreaButton}>Impact Area</button>
@@ -211,7 +224,7 @@ const BondingCurveChart: React.FC = () => {
         <svg ref={chartRef} className={styles.mainChartSvg}></svg>
       </div>
       <div className={styles.formContainer}>
-      <div className={styles.inputContainer}>
+        <div className={styles.inputContainer}>
           <label className={styles.inputLabel}>
             Supply:
             <input
@@ -222,7 +235,7 @@ const BondingCurveChart: React.FC = () => {
             />
           </label>
           <label className={styles.inputLabel}>
-            Mint Amount (Delta):
+            {isBurn ? 'Burn Amount (Delta)' : 'Mint Amount (Delta)'}:
             <input
               type="number"
               value={mintAmount}
