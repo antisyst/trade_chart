@@ -8,6 +8,8 @@ const BondingCurveChart: React.FC = () => {
 
   const calculatePrice = (supply: number): number => initialPrice * Math.exp(k * supply);
   const calculateTotalFunds = (supply: number): number => (initialPrice / k) * (Math.exp(k * supply) - 1);
+  const calculateTradeFunds = (initSupply: number, delta: number): number =>
+    calculateTotalFunds(initSupply + delta) - calculateTotalFunds(initSupply);
 
   const chartRef = useRef<SVGSVGElement | null>(null);
   const [chartWidth, setChartWidth] = useState<number>(700);
@@ -15,6 +17,7 @@ const BondingCurveChart: React.FC = () => {
   const [mintAmount, setMintAmount] = useState(0);
   const [newSupply, setNewSupply] = useState(currentSupply);
   const [totalUSDCRequired, setTotalUSDCRequired] = useState<number>(calculateTotalFunds(currentSupply));
+  const [tradeUSDCRequired, setTradeUSDCRequired] = useState<number>(0);
 
   const height = 500;
 
@@ -30,6 +33,7 @@ const BondingCurveChart: React.FC = () => {
     setCurrentSupply(500);
     setNewSupply(500);
     setTotalUSDCRequired(calculateTotalFunds(500));
+    setTradeUSDCRequired(0);
   };
 
   useEffect(() => {
@@ -162,9 +166,11 @@ const BondingCurveChart: React.FC = () => {
       const [mouseX] = d3.pointer(event);
       const clickedSupply = Math.round(xScale.invert(mouseX));
 
+      const delta = clickedSupply - currentSupply;
       setNewSupply(clickedSupply);
-      setMintAmount(clickedSupply - currentSupply);
+      setMintAmount(delta);
       setTotalUSDCRequired(calculateTotalFunds(clickedSupply));
+      setTradeUSDCRequired(calculateTradeFunds(currentSupply, delta));
     });
 
     return () => {
@@ -175,9 +181,11 @@ const BondingCurveChart: React.FC = () => {
 
   const handleSupplyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const supply = parseFloat(event.target.value) || 0;
+    const delta = supply - currentSupply;
     setCurrentSupply(supply);
     setNewSupply(supply + mintAmount);
     setTotalUSDCRequired(calculateTotalFunds(supply + mintAmount));
+    setTradeUSDCRequired(calculateTradeFunds(supply, delta));
   };
 
   const handleMintAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,51 +193,74 @@ const BondingCurveChart: React.FC = () => {
     setMintAmount(amount);
     setNewSupply(currentSupply + amount);
     setTotalUSDCRequired(calculateTotalFunds(currentSupply + amount));
+    setTradeUSDCRequired(calculateTradeFunds(currentSupply, amount));
   };
 
   return (
-    <div className={styles.chartContainer}>
-      <div className={styles.topContent}>
-        <h2 className={styles.chartTitle}>Bonding Curve</h2>
-        <div className={styles.buttonContainer}>
-          <button className={styles.bondingCurveButton}>Bonding Curve</button>
-          <button className={styles.currentSupplyButton}>Current Supply</button>
-          <button className={styles.newSupplyButton}>New Supply</button>
-          <button className={styles.impactAreaButton}>Impact Area</button>
+    <div className={styles.chartLayout}>
+      <div className={styles.chartContainer}>
+        <div className={styles.topContent}>
+          <h2 className={styles.chartTitle}>Bonding Curve</h2>
+          <div className={styles.buttonContainer}>
+            <button className={styles.bondingCurveButton}>Bonding Curve</button>
+            <button className={styles.currentSupplyButton}>Current Supply</button>
+            <button className={styles.newSupplyButton}>New Supply</button>
+            <button className={styles.impactAreaButton}>Impact Area</button>
+          </div>
         </div>
+        <svg ref={chartRef} className={styles.mainChartSvg}></svg>
       </div>
-      <svg ref={chartRef} className={styles.mainChartSvg}></svg>
+      <div className={styles.formContainer}>
       <div className={styles.inputContainer}>
-        <label className={styles.inputLabel}>
-          Supply:
-          <input
-            type="number"
-            value={currentSupply}
-            onChange={handleSupplyChange}
-            className={styles.inputField}
-          />
-        </label>
-        <label className={styles.inputLabel}>
-          Mint Amount:
-          <input
-            type="number"
-            value={mintAmount}
-            onChange={handleMintAmountChange}
-            className={styles.inputField}
-          />
-        </label>
-        <label className={styles.inputLabel}>
-          New Supply:
-          <input
-            type="number"
-            value={newSupply}
-            readOnly
-            className={styles.inputField}
-          />
-        </label>
-      </div>
-      <div className={styles.presetButtons}>
-        <button onClick={resetValues} className={styles.resetButton}>Reset</button>
+          <label className={styles.inputLabel}>
+            Supply:
+            <input
+              type="number"
+              value={currentSupply}
+              onChange={handleSupplyChange}
+              className={styles.inputField}
+            />
+          </label>
+          <label className={styles.inputLabel}>
+            Mint Amount (Delta):
+            <input
+              type="number"
+              value={mintAmount}
+              onChange={handleMintAmountChange}
+              className={styles.inputField}
+            />
+          </label>
+          <label className={styles.inputLabel}>
+            New Supply:
+            <input
+              type="number"
+              value={newSupply}
+              readOnly
+              className={styles.inputField}
+            />
+          </label>
+          <label className={styles.inputLabel}>
+            Total USDC Required:
+            <input
+              type="number"
+              value={totalUSDCRequired.toFixed(2)}
+              readOnly
+              className={styles.inputField}
+            />
+          </label>
+          <label className={styles.inputLabel}>
+            Trade USDC Required (Δ):
+            <input
+              type="number"
+              value={tradeUSDCRequired.toFixed(2)}
+              readOnly
+              className={styles.inputField}
+            />
+          </label>
+        </div>
+        <div className={styles.presetButtons}>
+          <button onClick={resetValues} className={styles.resetButton}>Reset</button>
+        </div>
       </div>
     </div>
   );
