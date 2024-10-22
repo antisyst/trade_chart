@@ -157,59 +157,77 @@ const BondingCurveChart: React.FC = () => {
       .style('color', '#FFFFFF')
       .style('pointer-events', 'none');
 
+    const updateHover = (xPos: number) => {
+      const hoveredSupply = Math.round(xScale.invert(xPos));
+      const hoveredPrice = calculatePrice(hoveredSupply);
+      const hoveredXPos = xScale(hoveredSupply);
+      const hoveredYPos = yScale(hoveredPrice);
+
+      svg.selectAll('.hover-point').remove();
+      svg.selectAll('.hover-line').remove();
+
+      svg.append('circle')
+        .attr('class', 'hover-point')
+        .attr('cx', hoveredXPos)
+        .attr('cy', hoveredYPos)
+        .attr('r', 5)
+        .attr('fill', '#16F195');
+
+      svg.append('line')
+        .attr('class', 'hover-line')
+        .attr('x1', hoveredXPos)
+        .attr('y1', hoveredYPos)
+        .attr('x2', hoveredXPos)
+        .attr('y2', height - 100)
+        .attr('stroke', '#FF4642')
+        .attr('stroke-dasharray', '3,3');
+
+      svg.append('line')
+        .attr('class', 'hover-line')
+        .attr('x1', 0)
+        .attr('y1', hoveredYPos)
+        .attr('x2', hoveredXPos)
+        .attr('y2', hoveredYPos)
+        .attr('stroke', '#FF4642')
+        .attr('stroke-dasharray', '3,3');
+
+      tooltip.style('opacity', 1)
+        .html(`Supply: ${hoveredSupply}<br>Price: ${hoveredPrice.toFixed(4)}`)
+        .style('left', `${xPos + 15}px`)
+        .style('top', `${hoveredYPos - 28}px`);
+    };
+
+    const handleDropPoint = (xPos: number) => {
+      const clickedSupply = Math.round(xScale.invert(xPos));
+      setNewSupply(clickedSupply);
+      const delta = clickedSupply - currentSupply;
+      setMintAmount(delta);
+      setTotalUSDCRequired(calculateTotalFunds(clickedSupply));
+      setTradeUSDCRequired(calculateTradeFunds(currentSupply, delta));
+      setIsBurn(delta < 0);
+    };
+
     svg.append('rect')
       .attr('width', chartWidth - (chartWidth < 500 ? 80 : 120))
       .attr('height', height - 100)
       .style('fill', 'transparent')
       .on('mousemove', function (event: MouseEvent) {
         const [mouseX] = d3.pointer(event);
-        const hoveredSupply = Math.round(xScale.invert(mouseX));
-        
-        const minSupply = Math.min(...priceData);
-        const maxSupply = Math.max(...priceData);
-      
-        if (hoveredSupply < minSupply || hoveredSupply > maxSupply) {
-          return;
-        }
-
-        const hoveredPrice = calculatePrice(hoveredSupply);
-        const hoveredXPos = xScale(hoveredSupply);
-        const hoveredYPos = yScale(hoveredPrice);
-
-        svg.selectAll('.hover-point').remove();
-        svg.selectAll('.hover-line').remove();
-
-        svg.append('circle')
-          .attr('class', 'hover-point')
-          .attr('cx', hoveredXPos)
-          .attr('cy', hoveredYPos)
-          .attr('r', 5)
-          .attr('fill', '#16F195');
-
-        svg.append('line')
-          .attr('class', 'hover-line')
-          .attr('x1', hoveredXPos)
-          .attr('y1', hoveredYPos)
-          .attr('x2', hoveredXPos)
-          .attr('y2', height - 100)
-          .attr('stroke', '#FF4642')
-          .attr('stroke-dasharray', '3,3');
-
-        svg.append('line')
-          .attr('class', 'hover-line')
-          .attr('x1', 0)
-          .attr('y1', hoveredYPos)
-          .attr('x2', hoveredXPos)
-          .attr('y2', hoveredYPos)
-          .attr('stroke', '#FF4642')
-          .attr('stroke-dasharray', '3,3');
-
-        tooltip.style('opacity', 1)
-          .html(`Supply: ${hoveredSupply}<br>Price: ${hoveredPrice.toFixed(4)}`)
-          .style('left', `${event.pageX + 15}px`)
-          .style('top', `${event.pageY - 28}px`);
+        updateHover(mouseX);
       })
       .on('mouseleave', function () {
+        svg.selectAll('.hover-point').remove();
+        svg.selectAll('.hover-line').remove();
+        tooltip.style('opacity', 0);
+      })
+      .on('touchstart touchmove', function (event: TouchEvent) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        updateHover(touch.clientX);
+      })
+      .on('touchend', function (event: TouchEvent) {
+        const touch = event.changedTouches[0];
+        handleDropPoint(touch.clientX);
         svg.selectAll('.hover-point').remove();
         svg.selectAll('.hover-line').remove();
         tooltip.style('opacity', 0);
@@ -217,15 +235,7 @@ const BondingCurveChart: React.FC = () => {
 
     svg.on('click', function (event: MouseEvent) {
       const [mouseX] = d3.pointer(event);
-      const clickedSupply = Math.round(xScale.invert(mouseX));
-
-      setNewSupply(clickedSupply);
-      const delta = clickedSupply - currentSupply;
-      setMintAmount(delta);
-      setTotalUSDCRequired(calculateTotalFunds(clickedSupply));
-      setTradeUSDCRequired(calculateTradeFunds(currentSupply, delta));
-
-      setIsBurn(delta < 0);
+      handleDropPoint(mouseX);
     });
 
     return () => {
