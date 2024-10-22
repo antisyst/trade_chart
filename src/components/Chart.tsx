@@ -157,45 +157,53 @@ const BondingCurveChart: React.FC = () => {
       .style('color', '#FFFFFF')
       .style('pointer-events', 'none');
 
-    const updateHover = (xPos: number) => {
-      const hoveredSupply = Math.round(xScale.invert(xPos));
-      const hoveredPrice = calculatePrice(hoveredSupply);
-      const hoveredXPos = xScale(hoveredSupply);
-      const hoveredYPos = yScale(hoveredPrice);
-
-      svg.selectAll('.hover-point').remove();
-      svg.selectAll('.hover-line').remove();
-
-      svg.append('circle')
-        .attr('class', 'hover-point')
-        .attr('cx', hoveredXPos)
-        .attr('cy', hoveredYPos)
-        .attr('r', 5)
-        .attr('fill', '#16F195');
-
-      svg.append('line')
-        .attr('class', 'hover-line')
-        .attr('x1', hoveredXPos)
-        .attr('y1', hoveredYPos)
-        .attr('x2', hoveredXPos)
-        .attr('y2', height - 100)
-        .attr('stroke', '#FF4642')
-        .attr('stroke-dasharray', '3,3');
-
-      svg.append('line')
-        .attr('class', 'hover-line')
-        .attr('x1', 0)
-        .attr('y1', hoveredYPos)
-        .attr('x2', hoveredXPos)
-        .attr('y2', hoveredYPos)
-        .attr('stroke', '#FF4642')
-        .attr('stroke-dasharray', '3,3');
-
-      tooltip.style('opacity', 1)
-        .html(`Supply: ${hoveredSupply}<br>Price: ${hoveredPrice.toFixed(4)}`)
-        .style('left', `${xPos + 15}px`)
-        .style('top', `${hoveredYPos - 28}px`);
-    };
+      const updateHover = (xPos: number) => {
+        const hoveredSupply = Math.round(xScale.invert(xPos));
+        const hoveredPrice = calculatePrice(hoveredSupply);
+        const hoveredXPos = xScale(hoveredSupply);
+        const hoveredYPos = yScale(hoveredPrice);
+      
+        svg.selectAll('.hover-point').remove();
+        svg.selectAll('.hover-line').remove();
+      
+        svg.append('circle')
+          .attr('class', 'hover-point')
+          .attr('cx', hoveredXPos)
+          .attr('cy', hoveredYPos)
+          .attr('r', 5)
+          .attr('fill', '#16F195');
+      
+        svg.append('line')
+          .attr('class', 'hover-line')
+          .attr('x1', hoveredXPos)
+          .attr('y1', hoveredYPos)
+          .attr('x2', hoveredXPos)
+          .attr('y2', height - 100)
+          .attr('stroke', '#FF4642')
+          .attr('stroke-dasharray', '3,3');
+      
+        svg.append('line')
+          .attr('class', 'hover-line')
+          .attr('x1', 0)
+          .attr('y1', hoveredYPos)
+          .attr('x2', hoveredXPos)
+          .attr('y2', hoveredYPos)
+          .attr('stroke', '#FF4642')
+          .attr('stroke-dasharray', '3,3');
+      
+        const chartBox = chartRef.current?.getBoundingClientRect();
+        const chartLeft = chartBox?.left || 0;
+        const chartTop = chartBox?.top || 0;
+      
+        const tooltipX = chartLeft + hoveredXPos + 15;
+        const tooltipY = chartTop + hoveredYPos - 10;
+      
+        tooltip.style('opacity', 1)
+          .html(`Supply: ${hoveredSupply}<br>Price: ${hoveredPrice.toFixed(4)}`)
+          .style('left', `${tooltipX}px`)
+          .style('top', `${tooltipY}px`);
+      };
+      
 
     const handleDropPoint = (xPos: number) => {
       const clickedSupply = Math.round(xScale.invert(xPos));
