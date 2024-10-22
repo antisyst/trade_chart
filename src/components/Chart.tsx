@@ -69,7 +69,7 @@ const BondingCurveChart: React.FC = () => {
 
     const yAxis = d3.axisLeft(yScale).ticks(10);
 
-    svg.append('g')
+    const xGrid = svg.append('g')
       .attr('class', 'grid')
       .attr('transform', `translate(0, ${height - 100})`)
       .call(d3.axisBottom(xScale)
@@ -79,7 +79,7 @@ const BondingCurveChart: React.FC = () => {
       )
       .attr('color', '#FFFFFF1A');
 
-    svg.append('g')
+    const yGrid = svg.append('g')
       .attr('class', 'grid')
       .call(d3.axisLeft(yScale)
         .ticks(10)
@@ -109,25 +109,6 @@ const BondingCurveChart: React.FC = () => {
       .attr('dx', '-0.5em')
       .attr('dy', '0.35em');
 
-    svg.append('text')
-      .attr('transform', `translate(${(chartWidth - (chartWidth < 500 ? 80 : 120)) / 2}, ${height - 60})`)
-      .style('text-anchor', 'middle')
-      .style('fill', '#FFFFFF99')
-      .style('font-family', 'Montserrat, serif')
-      .style('font-size', chartWidth < 500 ? '10px' : '13px')
-      .attr('dy', '0.8em')
-      .style('pointer-events', 'none')
-      .text('Supply');
-
-    svg.append('text')
-      .attr('transform', `translate(${chartWidth < 500 ? -30 : -60}, ${(height - 100) / 2}) rotate(-90)`)
-      .style('text-anchor', 'middle')
-      .style('fill', '#FFFFFF99')
-      .style('font-family', 'Montserrat, serif')
-      .style('font-size', chartWidth < 600 ? '10px' : '13px')
-      .style('pointer-events', 'none')
-      .text('Price (USDC)');
-
     const priceData = Array.from({ length: maxSupply + 1 }, (_, i) => i);
 
     const bondingCurveLine = d3.line<number>()
@@ -145,10 +126,10 @@ const BondingCurveChart: React.FC = () => {
       .attr('cx', xScale(currentSupply))
       .attr('cy', yScale(calculatePrice(currentSupply)))
       .attr('r', 6)
-      .attr('fill', '#008FFB');
+      .attr('fill', '#16F195');
 
     const isIncrease = newSupply >= currentSupply;
-    const newPointColor = isIncrease ? "#00E396" : "#FF4560";
+    const newPointColor = isIncrease ? "#FD6915" : "#FF4642";
 
     svg.append('circle')
       .attr('cx', xScale(newSupply))
@@ -166,34 +147,99 @@ const BondingCurveChart: React.FC = () => {
       .attr('fill', isIncrease ? '#00E39650' : '#FF456050')
       .attr('d', area);
 
-    svg.on('click', function (event) {
+    const tooltip = d3.select('body').append('div')
+      .attr('class', 'tooltip')
+      .style('opacity', 0)
+      .style('position', 'absolute')
+      .style('background', 'none')
+      .style('border', 'none')
+      .style('font-size', '12px') 
+      .style('color', '#FFFFFF')
+      .style('pointer-events', 'none');
+
+    svg.append('rect')
+      .attr('width', chartWidth - (chartWidth < 500 ? 80 : 120))
+      .attr('height', height - 100)
+      .style('fill', 'transparent')
+      .on('mousemove', function (event: MouseEvent) {
+        const [mouseX] = d3.pointer(event);
+        const hoveredSupply = Math.round(xScale.invert(mouseX));
+        
+        const minSupply = Math.min(...priceData);
+        const maxSupply = Math.max(...priceData);
+      
+        if (hoveredSupply < minSupply || hoveredSupply > maxSupply) {
+          return;
+        }
+
+        const hoveredPrice = calculatePrice(hoveredSupply);
+        const hoveredXPos = xScale(hoveredSupply);
+        const hoveredYPos = yScale(hoveredPrice);
+
+        svg.selectAll('.hover-point').remove();
+        svg.selectAll('.hover-line').remove();
+
+        svg.append('circle')
+          .attr('class', 'hover-point')
+          .attr('cx', hoveredXPos)
+          .attr('cy', hoveredYPos)
+          .attr('r', 5)
+          .attr('fill', '#16F195');
+
+        svg.append('line')
+          .attr('class', 'hover-line')
+          .attr('x1', hoveredXPos)
+          .attr('y1', hoveredYPos)
+          .attr('x2', hoveredXPos)
+          .attr('y2', height - 100)
+          .attr('stroke', '#FF4642')
+          .attr('stroke-dasharray', '3,3');
+
+        svg.append('line')
+          .attr('class', 'hover-line')
+          .attr('x1', 0)
+          .attr('y1', hoveredYPos)
+          .attr('x2', hoveredXPos)
+          .attr('y2', hoveredYPos)
+          .attr('stroke', '#FF4642')
+          .attr('stroke-dasharray', '3,3');
+
+        tooltip.style('opacity', 1)
+          .html(`Supply: ${hoveredSupply}<br>Price: ${hoveredPrice.toFixed(4)}`)
+          .style('left', `${event.pageX + 15}px`)
+          .style('top', `${event.pageY - 28}px`);
+      })
+      .on('mouseleave', function () {
+        svg.selectAll('.hover-point').remove();
+        svg.selectAll('.hover-line').remove();
+        tooltip.style('opacity', 0);
+      });
+
+    svg.on('click', function (event: MouseEvent) {
       const [mouseX] = d3.pointer(event);
       const clickedSupply = Math.round(xScale.invert(mouseX));
 
+      setNewSupply(clickedSupply);
       const delta = clickedSupply - currentSupply;
-      setNewSupply(Math.max(clickedSupply, 0));
       setMintAmount(delta);
-      setTotalUSDCRequired(calculateTotalFunds(Math.max(clickedSupply, 0)));
+      setTotalUSDCRequired(calculateTotalFunds(clickedSupply));
       setTradeUSDCRequired(calculateTradeFunds(currentSupply, delta));
 
-      if (delta < 0) {
-        setIsBurn(true);
-      } else {
-        setIsBurn(false);
-      }
+      setIsBurn(delta < 0);
     });
 
     return () => {
       window.removeEventListener('resize', handleResize);
       svg.selectAll('*').remove();
+      tooltip.remove();
     };
   }, [currentSupply, newSupply, chartWidth]);
 
   const handleSupplyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const supply = Math.max(parseFloat(event.target.value) || 0, 0); 
+    const supply = Math.max(parseFloat(event.target.value) || 0, 0);
     const delta = supply - currentSupply;
     setCurrentSupply(supply);
-    setNewSupply(Math.max(supply + mintAmount, 0)); 
+    setNewSupply(Math.max(supply + mintAmount, 0));
     setTotalUSDCRequired(calculateTotalFunds(supply + mintAmount));
     setTradeUSDCRequired(calculateTradeFunds(supply, delta));
     setIsBurn(delta < 0);
